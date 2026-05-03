@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>介護記録アプリ</title>
+<style>
+body{font-family:sans-serif;max-width:440px;margin:0 auto;padding:12px;background:#fff;color:#333}
+h2{font-size:15px;color:#0f766e;border-bottom:2px solid #0f766e;padding-bottom:4px;margin:14px 0 10px}
+.lbl{font-size:11px;font-weight:bold;color:#555;margin:10px 0 5px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.chip{padding:6px 13px;border-radius:20px;border:2px solid #bbb;background:#fff;font-size:12px;cursor:pointer;color:#333;user-select:none}
+.chip.sel{background:#0f766e;border-color:#0f766e;color:#fff}
+.chip.red.sel{background:#dc2626;border-color:#dc2626;color:#fff}
+.ampm{display:flex;gap:8px;margin-bottom:8px}
+.ampm button{flex:1;padding:8px;border-radius:8px;border:2px solid #bbb;background:#fff;font-size:13px;font-weight:bold;color:#666;cursor:pointer}
+.ampm button.sel{background:#0f766e;border-color:#0f766e;color:#fff}
+.panel{display:none}
+.panel.show{display:block}
+input[type=text],textarea{width:100%;border:1px solid #ccc;border-radius:8px;padding:8px;font-size:13px;font-family:sans-serif;margin-top:4px}
+textarea{resize:none;line-height:1.7}
+.nameinput{display:flex;gap:6px;align-items:center}
+.nameinput input{flex:1}
+.nameinput span{color:#666;font-size:13px;white-space:nowrap}
+.btn-green{display:block;width:100%;padding:12px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;margin-top:10px}
+.btn-copy{display:block;width:100%;padding:10px;background:#059669;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;margin-top:6px}
+.btn-gray{display:block;width:100%;padding:8px;background:#fff;color:#666;border:1px solid #ccc;border-radius:8px;font-size:13px;cursor:pointer;margin-top:6px}
+.result{background:#f5f5f5;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:13px;line-height:1.9;white-space:pre-wrap;word-break:break-all;margin-top:10px}
+.hint{font-size:11px;color:#888;text-align:center;margin-top:4px}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.tag{padding:5px 10px;border-radius:16px;background:#0f766e;color:#fff;font-size:12px;cursor:pointer}
+hr{border:none;border-top:1px solid #eee;margin:12px 0}
+.tabs{display:flex;border-bottom:2px solid #0f766e;margin-bottom:4px}
+.tabBtn{flex:1;padding:10px;font-size:13px;font-weight:bold;text-align:center;cursor:pointer;color:#999;border:none;background:none;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tabBtn.sel{color:#0f766e;border-bottom-color:#0f766e}
+.tabPane{display:none}
+.tabPane.show{display:block}
+.sub{font-size:11px;color:#0f766e;font-weight:bold;margin:8px 0 4px}
+.redlbl{font-size:11px;color:#dc2626;font-weight:bold;margin:8px 0 4px}
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <button class="tabBtn sel" id="tbCase">📋 ケース記録</button>
+  <button class="tabBtn" id="tbHo">🔄 申し送り</button>
+</div>
+
+<!-- ケース記録 -->
+<div class="tabPane show" id="paneCase">
+  <h2>ケース記録</h2>
+
+  <div class="lbl">利用者名</div>
+  <div class="nameinput">
+    <input type="text" id="cName" placeholder="例：田中">
+    <span>さん</span>
+  </div>
+  <hr>
+
+  <div class="lbl">様子・状態 / 支援内容</div>
+  <div class="ampm">
+    <button id="btnAm" class="sel">午前</button>
+    <button id="btnPm">午後</button>
+  </div>
+
+  <div class="panel show" id="panelAm">
+    <div class="sub">◎ 午前の様子</div>
+    <div class="chips" id="chAm"></div>
+    <div class="redlbl">▼ 行動面（午前）</div>
+    <div class="chips" id="chDam"></div>
+    <div class="sub">◎ 午前の支援内容</div>
+    <div class="chips" id="chSupAm"></div>
+  </div>
+  </div>
+
+  <div class="panel" id="panelPm">
+    <div class="sub">◎ 午後の様子</div>
+    <div class="chips" id="chPm"></div>
+    <div class="redlbl">▼ 行動面（午後）</div>
+    <div class="chips" id="chDpm"></div>
+    <div class="sub">◎ 午後の支援内容</div>
+    <div class="chips" id="chSupPm"></div>
+  </div>
+  <hr>
+  <div class="lbl">🍱 昼食の喫食状況</div>
+  <div class="chips" id="chEat"></div>
+  </div>
+  <hr>
+
+  <div class="lbl">特記事項・引継ぎ</div>
+  <textarea id="cFree" rows="3" placeholder="次回確認事項、家族連絡など"></textarea>
+
+  <button class="btn-green" id="btnGenCase">記録文を生成する</button>
+  <div id="cResultWrap" style="display:none">
+    <div class="result" id="cResult"></div>
+    <button class="btn-copy" id="btnCopyCase">📋 コピーする</button>
+    <div class="hint">コピー後、専用ソフトに貼り付けてください</div>
+  </div>
+  <button class="btn-gray" id="btnResetCase">リセット</button>
+</div>
+
+<!-- 申し送り -->
+<div class="tabPane" id="paneHo">
+  <h2>申し送り</h2>
+
+  <div class="lbl">勤務帯</div>
+  <div class="chips" id="chShift"></div>
+  <hr>
+
+  <div class="lbl">全体の様子</div>
+  <div class="chips" id="chOverall"></div>
+  <hr>
+
+  <div class="lbl">引継ぎ内容</div>
+  <textarea id="hoNote" rows="4" placeholder="例：明日〇〇さん受診あり。△△さん家族来訪予定。"></textarea>
+
+  <div class="lbl">記載者名</div>
+  <input type="text" id="hoWriter" placeholder="例：ふじさわ">
+
+  <button class="btn-green" id="btnGenHo">申し送り文を生成する</button>
+  <div id="hoResultWrap" style="display:none">
+    <div class="result" id="hoResult"></div>
+    <button class="btn-copy" id="btnCopyHo">📋 コピーする</button>
+    <div class="hint">コピー後、専用ソフトに貼り付けてください</div>
+  </div>
+  <button class="btn-gray" id="btnResetHo">リセット</button>
+</div>
+
+<script>
+// ===== データ =====
+var ST=[['穏やか','穏やかに過ごされていました'],['笑顔あり','笑顔が見られました'],['表情硬め','表情は硬めでした'],['不安な様子','不安そうな様子が見られました'],['落ち着かない','落ち着かない様子でした'],['疲労感あり','疲労感が見られました'],['発熱','発熱が見られました'],['体調不良','体調不良を訴えていらっしゃいました'],['良眠','良眠できていました'],['睡眠不良','睡眠が十分に取れていませんでした'],['歩行・体操','歩行・体操を実施しました'],['創作活動','創作活動に参加されました'],['タオルたたみ','タオルたたみをしていただきました'],['ドライブ','ドライブに出かけました']];
+var DG=[['他害あり','他の方への他害行為が見られました'],['自傷あり','自傷行為が見られました'],['走り出す','突然走り出す行動が見られました']];
+var SP=[['食事介助','食事介助を行いました'],['排泄介助','排泄介助を行いました'],['入浴介助','入浴介助を行いました'],['移乗介助','移乗・移動の介助を行いました'],['声かけ・見守り','声かけ・見守りを行いました'],['服薬確認','服薬確認を行いました'],['歩行・体操','歩行・体操を実施しました'],
+['創作活動','創作活動に参加されました'],
+['カラオケ','カラオケを楽しまれました'],
+['タオルたたみ','タオルたたみをしていただきました'],
+['ドライブ','ドライブに出かけました'],['会話・傾聴','会話・傾聴を行いました'],['家族へ連絡','ご家族へ連絡いたしました']];
+var SHIFTS=[['日勤','日勤'],['早番','早番'],['遅番','遅番'],['夜勤','夜勤']];
+var OVERALL=[['全体穏やか','全体的に穏やかな一日でした'],['活気あり','全体的に活気がありました'],['体調不良者あり','体調不良の方がいらっしゃいました'],['特変なし','特変なく過ごされました'],['イベントあり','本日はイベントがありました']];
+
+// ===== 選択状態 =====
+var EAT=[['10%','10%ほど召し上がりました'],['20%','20%ほど召し上がりました'],['30%','30%ほど召し上がりました'],['40%','40%ほど召し上がりました'],['50%','半量ほど召し上がりました'],['60%','60%ほど召し上がりました'],['70%','70%ほど召し上がりました'],['80%','80%ほど召し上がりました'],['90%','90%ほど召し上がりました'],['完食','完食されました']];
+var am=[],dam=[],supAm=[],pm=[],dpm=[],supPm=[],eat='';
+var hoShift='',hoOverall='';
+
+// ===== チップ生成 =====
+function addChips(id, data, arr, isRed) {
+  var wrap = document.getElementById(id);
+  for (var i=0; i<data.length; i++) {
+    (function(label, val) {
+      var el = document.createElement('span');
+      el.className = 'chip' + (isRed ? ' red' : '');
+      el.textContent = label;
+      el.onclick = function() {
+        var idx = arr.indexOf(val);
+        if (idx < 0) { arr.push(val); el.className = 'chip' + (isRed?' red':'') + ' sel'; }
+        else { arr.splice(idx,1); el.className = 'chip' + (isRed?' red':''); }
+      };
+      wrap.appendChild(el);
+    })(data[i][0], data[i][1]);
+  }
+}
+
+function addSingleChips(id, data, setter) {
+  var wrap = document.getElementById(id);
+  for (var i=0; i<data.length; i++) {
+    (function(label, val) {
+      var el = document.createElement('span');
+      el.className = 'chip';
+      el.textContent = label;
+      el.onclick = function() {
+        wrap.querySelectorAll('.chip').forEach(function(x){ x.className='chip'; });
+        el.className = 'chip sel';
+        setter(val);
+      };
+      wrap.appendChild(el);
+    })(data[i][0], data[i][1]);
+  }
+}
+
+addChips('chAm',    ST, am,    false);
+addChips('chDam',   DG, dam,   true);
+addChips('chSupAm', SP, supAm, false);
+addSingleChips('chEat', EAT, function(v){ eat=v; });
+addChips('chPm',    ST, pm,    false);
+addChips('chDpm',   DG, dpm,   true);
+addChips('chSupPm', SP, supPm, false);
+addSingleChips('chShift',   SHIFTS,   function(v){ hoShift=v; });
+addSingleChips('chOverall', OVERALL,  function(v){ hoOverall=v; });
+
+// ===== タブ =====
+document.getElementById('tbCase').onclick = function() {
+  document.getElementById('tbCase').className='tabBtn sel';
+  document.getElementById('tbHo').className='tabBtn';
+  document.getElementById('paneCase').className='tabPane show';
+  document.getElementById('paneHo').className='tabPane';
+};
+document.getElementById('tbHo').onclick = function() {
+  document.getElementById('tbHo').className='tabBtn sel';
+  document.getElementById('tbCase').className='tabBtn';
+  document.getElementById('paneHo').className='tabPane show';
+  document.getElementById('paneCase').className='tabPane';
+};
+
+// ===== 午前・午後 =====
+document.getElementById('btnAm').onclick = function() {
+  document.getElementById('btnAm').className='sel';
+  document.getElementById('btnPm').className='';
+  document.getElementById('panelAm').className='panel show';
+  document.getElementById('panelPm').className='panel';
+};
+document.getElementById('btnPm').onclick = function() {
+  document.getElementById('btnPm').className='sel';
+  document.getElementById('btnAm').className='';
+  document.getElementById('panelPm').className='panel show';
+  document.getElementById('panelAm').className='panel';
+};
+
+// ===== ユーティリティ =====
+function p(s) { return s && s.slice(-1)!=='。' && s.slice(-1)!=='．' ? s+'。' : s; }
+function today() { var d=new Date(); return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日'; }
+function blk(s,d,sp,lbl) {
+  var t='', all=s.concat(d);
+  if (all.length) t+='【'+lbl+'の様子】'+all.join('。また、')+'。\n';
+  if (sp.length) t+='【'+lbl+'の支援】'+sp.join('。また、')+'。\n';
+  return t;
+}
+function copyText(id, btnId) {
+  var txt = document.getElementById(id).textContent;
+  var btn = document.getElementById(btnId);
+  var ta = document.createElement('textarea');
+  ta.value = txt;
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  var ok = false;
+  try { ok = document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+  if (!ok && window.navigator && navigator.clipboard) {
+    navigator.clipboard.writeText(txt).then(function(){
+      btn.textContent='✅ コピーしました！';
+      setTimeout(function(){ btn.textContent='📋 コピーする'; },2000);
+    });
+    return;
+  }
+  btn.textContent = ok ? '✅ コピーしました！' : '⚠ 手動でコピーしてください';
+  setTimeout(function(){ btn.textContent='📋 コピーする'; },2000);
+}
+
+// ===== 記録文生成 =====
+document.getElementById('btnGenCase').onclick = function() {
+  var name = document.getElementById('cName').value.trim();
+  if (!name) { alert('利用者名を入力してください'); return; }
+  var t = name+'さんについて記録いたします。\n';
+  t += blk(am,dam,supAm,'','午前');
+  if (eat) t += '【昼食の喫食状況】'+eat+'。\n';
+  t += blk(pm,dpm,supPm,'','午後');
+  var f = document.getElementById('cFree').value.trim();
+  if (f) t += '【特記・引継ぎ】'+p(f)+'\n';
+  document.getElementById('cResult').textContent = t.trim();
+  document.getElementById('cResultWrap').style.display = 'block';
+};
+
+document.getElementById('btnCopyCase').onclick = function() { copyText('cResult','btnCopyCase'); };
+
+document.getElementById('btnResetCase').onclick = function() {
+  am.length=0;dam.length=0;supAm.length=0;pm.length=0;dpm.length=0;supPm.length=0;eat='';
+  document.querySelectorAll('#paneCase .chip').forEach(function(c){ c.className=c.className.replace(' sel',''); });
+  document.getElementById('cName').value='';
+  document.getElementById('cFree').value='';
+  document.getElementById('cResultWrap').style.display='none';
+  document.getElementById('btnAm').className='sel';
+  document.getElementById('btnPm').className='';
+  document.getElementById('panelAm').className='panel show';
+  document.getElementById('panelPm').className='panel';
+};
+
+// ===== 申し送り生成 =====
+document.getElementById('btnGenHo').onclick = function() {
+  if (!hoShift) { alert('勤務帯を選択してください'); return; }
+  var writer = document.getElementById('hoWriter').value.trim();
+  var note   = document.getElementById('hoNote').value.trim();
+  var t = '【申し送り】'+today()+' '+hoShift+'\n';
+  if (writer) t += '記載者：'+writer+'\n';
+  t += '\n';
+  if (hoOverall) t += '■ 全体の様子\n'+hoOverall+'。\n\n';
+  if (note) t += '■ 引継ぎ内容\n'+p(note)+'\n';
+  document.getElementById('hoResult').textContent = t.trim();
+  document.getElementById('hoResultWrap').style.display = 'block';
+};
+
+document.getElementById('btnCopyHo').onclick = function() { copyText('hoResult','btnCopyHo'); };
+
+document.getElementById('btnResetHo').onclick = function() {
+  hoShift='';hoOverall='';
+  document.querySelectorAll('#paneHo .chip').forEach(function(c){ c.className=c.className.replace(' sel',''); });
+  document.getElementById('hoNote').value='';
+  document.getElementById('hoWriter').value='';
+  document.getElementById('hoResultWrap').style.display='none';
+};
+</script>
+</body>
+</html>
